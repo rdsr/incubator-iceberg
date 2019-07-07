@@ -73,6 +73,7 @@ subprojects {
 
   ext {
     jmhVersion = '1.21'
+    shadePrefix = 'org.apache.iceberg'
   }
 
   sourceCompatibility = '1.8'
@@ -377,10 +378,6 @@ project(':iceberg-pig') {
 project(':iceberg-spark-runtime') {
   apply plugin: 'com.github.johnrengelman.shadow'
 
-  shadowJar {
-    from(project.sourceSets.main.output)
-  }
-
   tasks.build.dependsOn tasks.shadowJar
   tasks.install.dependsOn tasks.shadowJar
   tasks.javadocJar.dependsOn tasks.shadowJar
@@ -405,21 +402,23 @@ project(':iceberg-spark-runtime') {
     zip64 true
 
     // Relocate dependencies to avoid conflicts
-    relocate 'com.google', 'org.apache.iceberg.shaded.com.google'
-    relocate 'com.fasterxml', 'org.apache.iceberg.shaded.com.fasterxml'
-    relocate 'com.github.benmanes', 'org.apache.iceberg.shaded.com.github.benmanes'
-    relocate 'org.checkerframework', 'org.apache.iceberg.shaded.org.checkerframework'
-    relocate 'org.apache.avro', 'org.apache.iceberg.shaded.org.apache.avro'
-    relocate 'avro.shaded', 'org.apache.iceberg.shaded.org.apache.avro.shaded'
-    relocate 'com.thoughtworks.paranamer', 'org.apache.iceberg.shaded.com.thoughtworks.paranamer'
-    relocate 'org.apache.parquet', 'org.apache.iceberg.shaded.org.apache.parquet'
-    relocate 'shaded.parquet', 'org.apache.iceberg.shaded.org.apache.parquet.shaded'
+    relocate 'com.google', "${shadePrefix}.shaded.com.google"
+    relocate 'com.fasterxml', "${shadePrefix}.shaded.com.fasterxml"
+    relocate 'com.github.benmanes', "${shadePrefix}.shaded.com.github.benmanes"
+    relocate 'org.checkerframework', "${shadePrefix}.shaded.org.checkerframework"
+    relocate 'org.apache.avro', "${shadePrefix}.shaded.org.apache.avro"
+    relocate 'avro.shaded', "${shadePrefix}.shaded.org.apache.avro.shaded"
+    relocate 'com.thoughtworks.paranamer', "${shadePrefix}.shaded.com.thoughtworks.paranamer"
+    relocate 'org.apache.parquet', "${shadePrefix}.shaded.org.apache.parquet"
+    relocate 'shaded.parquet', "${shadePrefix}.shaded.org.apache.parquet.shaded"
     // relocate Avro's jackson dependency to share parquet-jackson locations
-    relocate 'org.codehaus.jackson', 'org.apache.iceberg.shaded.org.apache.parquet.shaded'
-    relocate 'org.apache.orc', 'org.apache.iceberg.shaded.org.apache.orc'
-    relocate 'io.airlift', 'org.apache.iceberg.shaded.io.airlift'
+    relocate 'org.codehaus.jackson', "${shadePrefix}.shaded.org.apache.parquet.shaded"
+    relocate 'org.apache.orc', "${shadePrefix}.shaded.org.apache.orc"
+    relocate 'io.airlift', "${shadePrefix}.shaded.io.airlift"
+    relocate 'org.apache.hive', "${shadePrefix}.shaded.org.apache.hive"
+    relocate 'org.apache.hadoop.hive', "${shadePrefix}.shaded.org.apache.hadoop.hive"
 
-    archiveName = "iceberg-spark-runtime-${version}.${extension}"
+    archiveFileName = "iceberg-spark-runtime-${version}.${archiveExtension}"
   }
 }
 
@@ -428,24 +427,18 @@ project(':iceberg-spark-runtime') {
 project(':iceberg-presto-runtime') {
     apply plugin: 'com.github.johnrengelman.shadow'
 
-    configurations {
-        shadow
-        compileOnly.extendsFrom shadow
-    }
-
     dependencies {
-        shadow project(':iceberg-api')
-        shadow project(':iceberg-core')
-        shadow project(':iceberg-orc')
-        shadow project(':iceberg-parquet')
-        shadow project(':iceberg-hive')
+        compile project(':iceberg-api')
+        compile project(':iceberg-core')
+        compile project(':iceberg-orc')
+        compile project(':iceberg-parquet')
+        compile project(':iceberg-hive')
 
-        shadow "org.apache.orc:orc-core::nohive"
-        shadow "org.apache.parquet:parquet-avro"
-        shadow "org.apache.avro:avro"
-        shadow ("org.apache.hive:hive-metastore") {
-            exclude group: 'org.apache.hadoop', module: 'hadoop-common'
-//            exclude group: 'org.apache.orc', module: 'orc-core'
+        compile "org.apache.orc:orc-core::nohive"
+        compile "org.apache.parquet:parquet-avro"
+        compile "org.apache.avro:avro"
+        compile ("org.apache.hive:hive-metastore") {
+          exclude group: 'org.apache.hadoop', module: 'hadoop-common'
         }
     }
 
@@ -480,14 +473,11 @@ project(':iceberg-presto-runtime') {
         exclude 'org/apache/hadoop/application-classloader.properties'
         exclude '**application-classloader.properties'
 
-        configurations = [project.configurations.shadow]
-        from(project.sourceSets.main.output)
-
-        relocate 'org.apache.avro', 'org.apache.iceberg.shaded.org.apache.avro'
-        relocate 'org.apache.parquet.avro', 'org.apache.iceberg.shaded.org.apache.parquet.avro'
-        relocate 'org.apache.hadoop.hive', 'org.apache.iceberg.shaded.org.apache.hadoop.hive'
-        relocate 'org.apache.hive', 'org.apache.iceberg.shaded.org.apache.hive'
-        archiveName = "iceberg-presto-runtime-${version}.${extension}"
+        relocate 'org.apache.avro', "${shadePrefix}.shaded.org.apache.avro"
+        relocate 'org.apache.parquet.avro', "${shadePrefix}.shaded.org.apache.parquet.avro"
+        relocate 'org.apache.hadoop.hive', "${shadePrefix}.shaded.org.apache.hadoop.hive"
+        relocate 'org.apache.hive', "${shadePrefix}.shaded.org.apache.hive"
+        archiveFileName = "iceberg-presto-runtime-${version}.${archiveExtension}"
     }
 }
 
