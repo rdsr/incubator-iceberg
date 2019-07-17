@@ -55,6 +55,11 @@ public class BaseTable implements Table, HasTableOperations {
   }
 
   @Override
+  public IncrTableScan newIncrScan() {
+    return new IncrDataTableScan(ops, this);
+  }
+
+  @Override
   public Schema schema() {
     return ops.current().schema();
   }

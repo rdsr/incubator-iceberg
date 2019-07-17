@@ -481,6 +481,11 @@ class BaseTransaction implements Transaction {
     }
 
     @Override
+    public IncrTableScan newIncrScan() {
+      throw new UnsupportedOperationException("Transaction tables do not support incremental scans");
+    }
+
+    @Override
     public Schema schema() {
       return current.schema();
     }

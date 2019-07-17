@@ -44,6 +44,9 @@ public interface Table {
    */
   TableScan newScan();
 
+
+  IncrTableScan newIncrScan();
+
   /**
    * Return the {@link Schema schema} for this table.
    *

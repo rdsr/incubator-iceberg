@@ -93,6 +93,11 @@ abstract class BaseMetadataTable implements Table {
   }
 
   @Override
+  public IncrTableScan newIncrScan() {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
   public UpdateProperties updateProperties() {
     throw new UnsupportedOperationException("Cannot update the properties of a metadata table");
   }
