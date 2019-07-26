@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.specific.SpecificData;
 import org.apache.iceberg.avro.AvroSchemaUtil;
@@ -420,6 +421,23 @@ class GenericDataFile
         .add("key_metadata", keyMetadata == null ? "null" : "(redacted)")
         .add("split_offsets", splitOffsets == null ? "null" : splitOffsets)
         .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    GenericDataFile that = (GenericDataFile) o;
+    return Objects.equals(filePath, that.filePath);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(filePath);
   }
 
   @Override
