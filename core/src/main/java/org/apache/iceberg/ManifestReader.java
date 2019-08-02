@@ -20,6 +20,8 @@
 package org.apache.iceberg;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import java.io.IOException;
@@ -53,9 +55,13 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
   private static final List<String> CHANGE_COLUNNS = Lists.newArrayList(
       "file_path", "file_format", "partition", "record_count", "file_size_in_bytes");
 
+  private static final Predicate<? super ManifestEntry> DEFAULT_PREDICATE =
+          e -> e.status() != ManifestEntry.Status.DELETED;
+  private final Predicate<ManifestEntry> manifestEntryPredicate;
+
   // Visible for testing
   static ManifestReader read(InputFile file) {
-    return new ManifestReader(file, null);
+    return read(file, null);
   }
 
   /**
@@ -65,8 +71,15 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
    * @param specLookup a function to look up the manifest's partition spec by ID
    * @return a manifest reader
    */
-  public static ManifestReader read(InputFile file, Function<Integer, PartitionSpec> specLookup) {
-    return new ManifestReader(file, specLookup);
+  public static ManifestReader read(
+          InputFile file, Function<Integer, PartitionSpec> specLookup) {
+    return new ManifestReader(file, specLookup, Predicates.alwaysTrue());
+  }
+
+  public static ManifestReader read(
+          InputFile file, Function<Integer, PartitionSpec> specLookup,
+          Predicate<ManifestEntry> manifestEntryPredicate) {
+    return new ManifestReader(file, specLookup, manifestEntryPredicate);
   }
 
   private final InputFile file;
@@ -78,7 +91,8 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
   private List<ManifestEntry> cachedAdds = null;
   private List<ManifestEntry> cachedDeletes = null;
 
-  private ManifestReader(InputFile file, Function<Integer, PartitionSpec> specLookup) {
+  private ManifestReader(InputFile file, Function<Integer, PartitionSpec> specLookup,
+                         Predicate<ManifestEntry> manifestEntryPredicate) {
     this.file = file;
 
     try {
@@ -105,6 +119,7 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
     }
 
     this.fileSchema = new Schema(DataFile.getType(spec.partitionType()).fields());
+    this.manifestEntryPredicate = Predicates.and(DEFAULT_PREDICATE, manifestEntryPredicate);
   }
 
   public InputFile file() {
@@ -139,6 +154,7 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
     return new FilteredManifest(this, alwaysTrue(), expr, fileSchema, ALL_COLUMNS, true);
   }
 
+  @Override
   public FilteredManifest caseSensitive(boolean caseSensitive) {
     return new FilteredManifest(this, alwaysTrue(), alwaysTrue(), fileSchema, ALL_COLUMNS, caseSensitive);
   }
@@ -214,9 +230,7 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
   // visible for use by PartialManifest
   Iterator<DataFile> iterator(Expression partFilter, Schema fileProjection) {
     return Iterables.transform(Iterables.filter(
-        entries(fileProjection),
-        entry -> entry.status() != ManifestEntry.Status.DELETED),
-        ManifestEntry::file).iterator();
+        entries(fileProjection), manifestEntryPredicate), ManifestEntry::file).iterator();
   }
 
 }

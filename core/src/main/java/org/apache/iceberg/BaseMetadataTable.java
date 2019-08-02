@@ -86,8 +86,8 @@ abstract class BaseMetadataTable implements Table {
   }
 
   @Override
-  public IncrTableScan newIncrScan() {
-    throw new UnsupportedOperationException("Not implemented");
+  public TableScan newIncrementalScan(long fromSnapshotId, long toSnapshotId) {
+    throw new UnsupportedOperationException("Incremental scan for metadata tables is not supported");
   }
 
   @Override

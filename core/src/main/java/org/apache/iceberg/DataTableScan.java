@@ -21,10 +21,14 @@ package org.apache.iceberg;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.ManifestEvaluator;
 import org.apache.iceberg.expressions.ResidualEvaluator;
@@ -68,20 +72,34 @@ public class DataTableScan extends BaseTableScan {
 
   public CloseableIterable<FileScanTask> planFiles(TableOperations ops, Snapshot snapshot,
                                                    Expression rowFilter, boolean caseSensitive, boolean colStats) {
+    return planFiles(
+            ops, snapshot, rowFilter, caseSensitive, colStats, Predicates.alwaysTrue(), Predicates.alwaysTrue());
+  }
+
+  protected CloseableIterable<FileScanTask> planFiles(TableOperations ops, Snapshot snapshot,
+                                                   Expression rowFilter, boolean caseSensitive, boolean colStats,
+                                                   Predicate<ManifestFile> manifestPredicate,
+                                                   Predicate<ManifestEntry> manifestEntryPredicate) {
     LoadingCache<Integer, ManifestEvaluator> evalCache = Caffeine.newBuilder().build(specId -> {
       PartitionSpec spec = ops.current().spec(specId);
       return ManifestEvaluator.forRowFilter(rowFilter, spec, caseSensitive);
     });
 
-    Iterable<ManifestFile> nonEmptyManifests = Iterables.filter(snapshot.manifests(),
-        manifest -> manifest.hasAddedFiles() || manifest.hasExistingFiles());
-    Iterable<ManifestFile> matchingManifests = Iterables.filter(nonEmptyManifests,
-        manifest -> evalCache.get(manifest.partitionSpecId()).eval(manifest));
+    // Default Manifest predicates
+    Predicate<ManifestFile> nonEmptyManifests =
+            manifest -> manifest.hasAddedFiles() || manifest.hasExistingFiles();
+    Predicate<ManifestFile> manifestMatchingPartitions =
+            manifest -> evalCache.get(manifest.partitionSpecId()).eval(manifest);
+
+    Iterable<ManifestFile> matchingManifests = Iterables.filter(snapshot.manifests(),
+            Predicates.and(manifestPredicate, nonEmptyManifests, manifestMatchingPartitions));
+
 
     Iterable<CloseableIterable<FileScanTask>> readers = Iterables.transform(
         matchingManifests,
         manifest -> {
-          ManifestReader reader = ManifestReader.read(ops.io().newInputFile(manifest.path()), ops.current()::spec);
+          ManifestReader reader = ManifestReader.read(
+                  ops.io().newInputFile(manifest.path()), ops.current()::spec, manifestEntryPredicate);
           PartitionSpec spec = ops.current().spec(manifest.partitionSpecId());
           String schemaString = SchemaParser.toJson(spec.schema());
           String specString = PartitionSpecParser.toJson(spec);

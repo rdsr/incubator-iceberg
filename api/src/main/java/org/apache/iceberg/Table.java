@@ -45,7 +45,13 @@ public interface Table {
   TableScan newScan();
 
 
-  IncrTableScan newIncrScan();
+  /**
+   * @param fromSnapshotId - the last snapshot id read by the user, exclusive
+   * @param toSnapshotId - read incremental data upto this snapshot id
+   * @return a table scan which can read incremental data from {@param fromSnapshotId}
+   * exclusive and up to {@toSnapshotId} inclusive
+   */
+  TableScan newIncrementalScan(long fromSnapshotId, long toSnapshotId);
 
   /**
    * Return the {@link Schema schema} for this table.

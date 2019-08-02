@@ -102,9 +102,6 @@ class Reader implements DataSourceReader, SupportsPushDownFilters, SupportsPushD
   private final FileIO fileIo;
   private final EncryptionManager encryptionManager;
   private final boolean caseSensitive;
-  private final Boolean incrSupport;
-  private final Long startSnapshotId;
-  private final Long endSnapshotId;
   private StructType requestedSchema = null;
   private List<Expression> filterExpressions = null;
   private Filter[] pushedFilters = NO_FILTERS;
@@ -117,19 +114,11 @@ class Reader implements DataSourceReader, SupportsPushDownFilters, SupportsPushD
   Reader(Table table, boolean caseSensitive, DataSourceOptions options) {
     this.table = table;
     this.snapshotId = options.get("snapshot-id").map(Long::parseLong).orElse(null);
-    this.incrSupport = options.get("incremental-support").map(Boolean::parseBoolean).orElse(false);
-    this.startSnapshotId = options.get("start-snapshot-id").map(Long::parseLong).orElse(null);
-    this.endSnapshotId = options.get("end-snapshot-id").map(Long::parseLong).orElse(null);
     this.asOfTimestamp = options.get("as-of-timestamp").map(Long::parseLong).orElse(null);
     if (snapshotId != null && asOfTimestamp != null) {
       throw new IllegalArgumentException(
           "Cannot scan using both snapshot-id and as-of-timestamp to select the table snapshot");
     }
-
-    if (incrSupport) {
-      Preconditions.checkState(startSnapshotId != null);
-    }
-
     this.schema = table.schema();
     this.fileIo = table.io();
     this.encryptionManager = table.encryption();
@@ -231,9 +220,8 @@ class Reader implements DataSourceReader, SupportsPushDownFilters, SupportsPushD
 
   private List<CombinedScanTask> tasks() {
     if (tasks == null) {
-      TableScan scan = (incrSupport ?
-              table.newIncrScan().readRange(startSnapshotId, endSnapshotId) :
-              table.newScan())
+      TableScan scan = table
+          .newScan()
           .caseSensitive(caseSensitive)
           .project(lazySchema());
 

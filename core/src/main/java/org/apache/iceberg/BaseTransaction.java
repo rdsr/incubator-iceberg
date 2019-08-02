@@ -332,7 +332,7 @@ class BaseTransaction implements Transaction {
     }
 
     @Override
-    public IncrTableScan newIncrScan() {
+    public TableScan newIncrementalScan(long fromSnapshotId, long toSnapshotId) {
       throw new UnsupportedOperationException("Transaction tables do not support incremental scans");
     }
 
