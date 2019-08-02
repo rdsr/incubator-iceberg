@@ -21,6 +21,8 @@ package org.apache.iceberg;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import java.io.IOException;
@@ -28,6 +30,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.avro.AvroIterable;
 import org.apache.iceberg.exceptions.RuntimeIOException;
@@ -44,7 +47,7 @@ import static org.apache.iceberg.expressions.Expressions.alwaysTrue;
 /**
  * Reader for manifest files.
  * <p>
- * Readers are created using the builder from {@link #read(InputFile, Map)}.
+ * Readers are created using the builder from {@link #read(InputFile, Function)}.
  */
 public class ManifestReader extends CloseableGroup implements Filterable<FilteredManifest> {
   private static final Logger LOG = LoggerFactory.getLogger(ManifestReader.class);
@@ -56,6 +59,15 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
       .addAll(CHANGE_COLUMNS)
       .add("value_counts", "null_value_counts", "lower_bounds", "upper_bounds")
       .build();
+
+  private static final Predicate<? super ManifestEntry> DEFAULT_PREDICATE =
+      e -> e.status() != ManifestEntry.Status.DELETED;
+  private final Predicate<ManifestEntry> manifestEntryPredicate;
+
+  // Visible for testing
+  static ManifestReader read(InputFile file) {
+    return read(file, null);
+  }
 
   /**
    * Returns a new {@link ManifestReader} for an {@link InputFile}.
@@ -79,7 +91,12 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
    * @return a manifest reader
    */
   public static ManifestReader read(InputFile file, Map<Integer, PartitionSpec> specsById) {
-    return new ManifestReader(file, specsById);
+    return new ManifestReader(file, specsById, Predicates.alwaysTrue());
+  }
+
+  public static ManifestReader read(
+      InputFile file, Map<Integer, PartitionSpec> specsById, Predicate<ManifestEntry> manifestEntryPredicate) {
+    return new ManifestReader(file, specsById, manifestEntryPredicate);
   }
 
   private final InputFile file;
@@ -91,7 +108,8 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
   private List<ManifestEntry> cachedAdds = null;
   private List<ManifestEntry> cachedDeletes = null;
 
-  private ManifestReader(InputFile file, Map<Integer, PartitionSpec> specsById) {
+  private ManifestReader(
+      InputFile file, Map<Integer, PartitionSpec> specsById, Predicate<ManifestEntry> manifestEntryPredicate) {
     this.file = file;
 
     try {
@@ -118,6 +136,7 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
     }
 
     this.fileSchema = new Schema(DataFile.getType(spec.partitionType()).fields());
+    this.manifestEntryPredicate = Predicates.and(DEFAULT_PREDICATE, manifestEntryPredicate);
   }
 
   public InputFile file() {
@@ -233,7 +252,7 @@ public class ManifestReader extends CloseableGroup implements Filterable<Filtere
   Iterator<DataFile> iterator(Expression partFilter, Schema fileProjection) {
     return Iterables.transform(Iterables.filter(
         entries(fileProjection),
-        entry -> entry.status() != ManifestEntry.Status.DELETED),
+        manifestEntryPredicate),
         ManifestEntry::file).iterator();
   }
 

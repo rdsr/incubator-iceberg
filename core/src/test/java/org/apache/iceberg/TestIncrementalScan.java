@@ -27,7 +27,7 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestIncrScan extends TableTestBase {
+public class TestIncrementalScan extends TableTestBase {
   @Test
   public void testAppend() {
     // ManifestEntry.Existing flag is only set when manifests are merged
@@ -37,31 +37,31 @@ public class TestIncrScan extends TableTestBase {
     add(files("C"));
     add(files("D"));
     add(files("E")); // 4
-    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrScan(0, 4));
+    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrementalScan(0, 4));
 
     del(files("E", "D", "C")); // 5
     // Idempotent scan - 0,4 still gives back old files
-    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrScan(0, 4));
-    Assert.assertEquals(Sets.newHashSet("B"), incrScan(0, 5));
-    Assert.assertTrue(incrScan(2, 5).isEmpty());
-    Assert.assertTrue(incrScan(3, 5).isEmpty());
-    Assert.assertTrue(incrScan(4, 5).isEmpty());
+    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrementalScan(0, 4));
+    Assert.assertEquals(Sets.newHashSet("B"), incrementalScan(0, 5));
+    Assert.assertTrue(incrementalScan(2, 5).isEmpty());
+    Assert.assertTrue(incrementalScan(3, 5).isEmpty());
+    Assert.assertTrue(incrementalScan(4, 5).isEmpty());
 
     add(files("F")); // 6
     add(files("G")); // 7
     add(files("H")); // 8
 
     // Idempotent scans - old identifiers still give back existing data
-    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrScan(0, 4));
-    Assert.assertEquals(Sets.newHashSet("B"), incrScan(0, 5));
+    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrementalScan(0, 4));
+    Assert.assertEquals(Sets.newHashSet("B"), incrementalScan(0, 5));
 
-    Assert.assertEquals(Sets.newHashSet("B", "F", "G", "H"), incrScan(0, 8));
-    Assert.assertEquals(Sets.newHashSet("B", "F", "G"), incrScan(0, 7));
-    Assert.assertEquals(Sets.newHashSet("B", "F"), incrScan(0, 6));
+    Assert.assertEquals(Sets.newHashSet("B", "F", "G", "H"), incrementalScan(0, 8));
+    Assert.assertEquals(Sets.newHashSet("B", "F", "G"), incrementalScan(0, 7));
+    Assert.assertEquals(Sets.newHashSet("B", "F"), incrementalScan(0, 6));
 
-    Assert.assertTrue(incrScan(2, 5).isEmpty());
-    Assert.assertTrue(incrScan(3, 5).isEmpty());
-    Assert.assertTrue(incrScan(4, 5).isEmpty());
+    Assert.assertTrue(incrementalScan(2, 5).isEmpty());
+    Assert.assertTrue(incrementalScan(3, 5).isEmpty());
+    Assert.assertTrue(incrementalScan(4, 5).isEmpty());
   }
 
   @Test
@@ -72,18 +72,18 @@ public class TestIncrScan extends TableTestBase {
     add(files("C"));
     add(files("D"));
     add(files("E")); // 4
-    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrScan(0, 4));
+    Assert.assertEquals(Sets.newHashSet("B", "C", "D", "E"), incrementalScan(0, 4));
 
     replace(files("A", "B", "C"), files("F", "G")); // 5
-    Assert.assertEquals(Sets.newHashSet("D", "E", "F", "G"), incrScan(0, 5));
-    Assert.assertEquals(Sets.newHashSet("F", "G"), incrScan(4, 5));
-    Assert.assertEquals(Sets.newHashSet("E", "F", "G"), incrScan(3, 5));
+    Assert.assertEquals(Sets.newHashSet("D", "E", "F", "G"), incrementalScan(0, 5));
+    Assert.assertEquals(Sets.newHashSet("F", "G"), incrementalScan(4, 5));
+    Assert.assertEquals(Sets.newHashSet("E", "F", "G"), incrementalScan(3, 5));
 
     add(files("H"));
     add(files("I")); // 7
-    Assert.assertEquals(Sets.newHashSet("D", "E", "F", "G", "H", "I"), incrScan(0, 7));
-    Assert.assertEquals(Sets.newHashSet("I"), incrScan(6, 7));
-    Assert.assertEquals(Sets.newHashSet("H", "I"), incrScan(5, 7));
+    Assert.assertEquals(Sets.newHashSet("D", "E", "F", "G", "H", "I"), incrementalScan(0, 7));
+    Assert.assertEquals(Sets.newHashSet("I"), incrementalScan(6, 7));
+    Assert.assertEquals(Sets.newHashSet("H", "I"), incrementalScan(5, 7));
   }
 
   private static DataFile file(String name) {
@@ -119,14 +119,14 @@ public class TestIncrScan extends TableTestBase {
   }
 
   private List<DataFile> files(String... names) {
-    return Lists.transform(Lists.newArrayList(names), TestIncrScan::file);
+    return Lists.transform(Lists.newArrayList(names), TestIncrementalScan::file);
   }
 
-  private Set<String> incrScan(int startSnapshotIndex, int endSnapshotIndex) {
+  private Set<String> incrementalScan(int startSnapshotIndex, int endSnapshotIndex) {
     List<Snapshot> snapshots = Lists.newArrayList(table.snapshots());
     Snapshot s1 = snapshots.get(startSnapshotIndex);
     Snapshot s2 = snapshots.get(endSnapshotIndex);
-    TableScan incrTableScan = table.newIncrScan().readRange(s1.snapshotId(), s2.snapshotId());
+    TableScan incrTableScan = table.newIncrementalScan(s1.snapshotId(), s2.snapshotId());
     Iterable<String> filesToRead = Iterables.transform(incrTableScan.planFiles(), t -> {
       String path = t.file().path().toString();
       return path.split("\\.")[0];

@@ -181,4 +181,3 @@ public interface TableScan {
    */
   boolean isCaseSensitive();
 }
-
