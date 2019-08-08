@@ -223,4 +223,36 @@ public class HiveTableTest extends HiveTableBaseTest {
     icebergTable.refresh();
     Assert.assertEquals(20, icebergTable.currentSnapshot().manifests().size());
   }
+
+  @Test
+  public void testConcurrentAppendsForTable() throws InterruptedException {
+    Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
+
+    String fileName = UUID.randomUUID().toString();
+    DataFile file = DataFiles.builder(icebergTable.spec())
+            .withPath(FileFormat.PARQUET.addExtension(fileName))
+            .withRecordCount(2)
+            .withFileSizeInBytes(0)
+            .build();
+
+    // If we reduce the number of threads, the problem is less evident.
+    ExecutorService executorService = MoreExecutors.getExitingExecutorService(
+            (ThreadPoolExecutor) Executors.newFixedThreadPool(10));
+
+
+    Consumer<Integer> t = (idx) -> {
+      long startTime = System.currentTimeMillis();
+      System.out.println("Starting append " + idx);
+      icebergTable.newAppend().appendFile(file).commit();
+      System.out.println("Time taken for append " + idx + "in thread " + Thread.currentThread() + " = "
+              + (System.currentTimeMillis() - startTime + "ms"));
+    };
+
+    for (int i = 0; i < 10; i++) {
+      int finalI = i;
+      executorService.submit(() -> t.accept(finalI));
+    }
+
+    executorService.awaitTermination(1, TimeUnit.MINUTES);
+  }
 }
