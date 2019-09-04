@@ -51,7 +51,17 @@ public interface Table {
    * @return a table scan which can read incremental data from {@param fromSnapshotId}
    * exclusive and up to {@toSnapshotId} inclusive
    */
-  TableScan newIncrementalScan(long fromSnapshotId, long toSnapshotId);
+  TableScan newAppendsBetween(long fromSnapshotId, long toSnapshotId);
+
+  /**
+   * @param fromSnapshotId - the last snapshot id read by the user, exclusive
+   * @return a table scan which can read incremental data from {@param fromSnapshotId}
+   * exclusive and up to current snapshot inclusive
+   */
+  default  TableScan newAppendsBetween(long fromSnapshotId) {
+    return newAppendsBetween(fromSnapshotId, currentSnapshot().snapshotId());
+  }
+
 
   /**
    * Return the {@link Schema schema} for this table.

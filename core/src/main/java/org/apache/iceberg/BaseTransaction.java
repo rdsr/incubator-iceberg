@@ -481,7 +481,7 @@ class BaseTransaction implements Transaction {
     }
 
     @Override
-    public TableScan newIncrementalScan(long fromSnapshotId, long toSnapshotId) {
+    public TableScan newAppendsBetween(long fromSnapshotId, long toSnapshotId) {
       throw new UnsupportedOperationException("Transaction tables do not support incremental scans");
     }
 

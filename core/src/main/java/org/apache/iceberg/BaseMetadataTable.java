@@ -93,7 +93,7 @@ abstract class BaseMetadataTable implements Table {
   }
 
   @Override
-  public TableScan newIncrementalScan(long fromSnapshotId, long toSnapshotId) {
+  public TableScan newAppendsBetween(long fromSnapshotId, long toSnapshotId) {
     throw new UnsupportedOperationException("Incremental scan for metadata tables is not supported");
   }
 

@@ -55,8 +55,8 @@ public class BaseTable implements Table, HasTableOperations {
   }
 
   @Override
-  public TableScan newIncrementalScan(long fromSnapshotId, long inclusiveToSnapshotId) {
-    return new IncrementalDataScan(ops, this, fromSnapshotId, inclusiveToSnapshotId);
+  public TableScan newAppendsBetween(long exclusiveFromSnapshotId, long inclusiveToSnapshotId) {
+    return new AppendsBetweenScan(ops, this, exclusiveFromSnapshotId, inclusiveToSnapshotId);
   }
 
   @Override
