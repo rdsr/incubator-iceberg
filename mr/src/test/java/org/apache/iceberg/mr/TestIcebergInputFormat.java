@@ -66,7 +66,6 @@ import org.junit.runners.Parameterized;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-
 @RunWith(Parameterized.class)
 public class TestIcebergInputFormat {
   private static final Schema SCHEMA = new Schema(
