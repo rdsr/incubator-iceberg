@@ -197,7 +197,7 @@ public class IcebergInputFormat<T> extends InputFormat<Void, T> {
      * can correctly apply the residual filters, then it
      * should call this api. Otherwise the current
      * api will throw an exception if the passed in
-     * filter is not completely satisfied. Note. This
+     * filter is not completely satisfied. Note: This
      * does not apply to standalone MR application
      */
     public ConfigBuilder platformAppliesFilterResiduals() {
@@ -264,7 +264,7 @@ public class IcebergInputFormat<T> extends InputFormat<Void, T> {
         if (residual != null && !residual.equals(Expressions.alwaysTrue())) {
           throw new RuntimeException(
               String.format(
-                  "Filter expression %s is not completely satisfied . Additional rows " +
+                  "Filter expression %s is not completely satisfied. Additional rows " +
                       "can be returned not satisfied by the filter expression", residual));
         }
       });
@@ -490,9 +490,9 @@ public class IcebergInputFormat<T> extends InputFormat<Void, T> {
         case PIG:
         case HIVE:
           //TODO implement value readers for Pig and Hive
-          throw new UnsupportedOperationException();
+          throw new UnsupportedOperationException("In memory representation not yet supported for Pig and Hive");
         case DEFAULT:
-          //TODO: We do not have support for Iceberg generics for ORC
+          //TODO:Gb We do not have support for Iceberg generics for ORC
           throw new UnsupportedOperationException();
       }
 
