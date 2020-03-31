@@ -236,7 +236,9 @@ project(':iceberg-mr') {
     testCompile project(path: ':iceberg-core', configuration: 'testArtifacts')
 
     testCompile "org.apache.hadoop:hadoop-mapreduce-client-jobclient::tests"
+    testCompile "org.apache.hadoop:hadoop-yarn-server-tests::tests"
     testCompile "org.apache.hadoop:hadoop-hdfs::tests"
+    testCompile "org.apache.hadoop:hadoop-common"
   }
 }
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.iceberg.mr;
+package org.apache.iceberg.mr.mapreduce;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
@@ -65,6 +65,7 @@ import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.hadoop.Util;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.mr.SerializationUtil;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.TypeUtil;

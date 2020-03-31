@@ -119,7 +119,7 @@ public class ORC {
   public static class ReadBuilder {
     private final InputFile file;
     private final Configuration conf;
-    private org.apache.iceberg.Schema schema = null;
+    private Schema schema = null;
     private Long start = null;
     private Long length = null;
 
@@ -148,7 +148,7 @@ public class ORC {
       return this;
     }
 
-    public ReadBuilder schema(org.apache.iceberg.Schema projectSchema) {
+    public ReadBuilder schema(Schema projectSchema) {
       this.schema = projectSchema;
       return this;
     }

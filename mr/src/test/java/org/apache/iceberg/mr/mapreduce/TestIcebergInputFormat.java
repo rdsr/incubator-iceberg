@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.iceberg.mr;
+package org.apache.iceberg.mr.mapreduce;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
@@ -54,6 +54,7 @@ import org.apache.iceberg.data.parquet.GenericParquetWriter;
 import org.apache.iceberg.hadoop.HadoopCatalog;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.FileAppender;
+import org.apache.iceberg.mr.mapreduce.IcebergInputFormat;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -66,17 +67,18 @@ import org.junit.runners.Parameterized;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+
 @RunWith(Parameterized.class)
 public class TestIcebergInputFormat {
-  private static final Schema SCHEMA = new Schema(
+  static final Schema SCHEMA = new Schema(
       required(1, "data", Types.StringType.get()),
       required(3, "id", Types.LongType.get()),
       required(2, "date", Types.StringType.get()));
 
-  private static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA)
-                                                         .identity("date")
-                                                         .bucket("id", 1)
-                                                         .build();
+  static final PartitionSpec SPEC = PartitionSpec.builderFor(SCHEMA)
+                                                 .identity("date")
+                                                 .bucket("id", 1)
+                                                 .build();
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
