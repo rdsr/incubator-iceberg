@@ -35,6 +35,7 @@ import org.apache.iceberg.mr.mapreduce.IcebergInputFormat;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.Types;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class TestMRJob {
   @Parameterized.Parameters
   public static Object[][] parameters() {
     return new Object[][]{
-        new Object[]{"parquet"},
+        //new Object[]{"parquet"},
         new Object[]{"avro"}
     };
   }
@@ -78,15 +79,12 @@ public class TestMRJob {
 
   @BeforeClass
   public static void setupMiniCluster() throws Exception {
-
     Configuration conf = new Configuration();
     DFS_CLUSTER = new MiniDFSCluster.Builder(conf).build();
     MR_CLUSTER = new MiniMRYarnCluster("test-Iceberg-MR-job", 2);
     fileIO = new HadoopFileIO(conf);
     MR_CLUSTER.init(DFS_CLUSTER.getConfiguration(0));
     MR_CLUSTER.start();
-
-
   }
 
   @AfterClass
@@ -128,19 +126,16 @@ public class TestMRJob {
     table.newAppend()
          .appendFile(dataFile)
          .commit();
-
     //writeExpectedRecords(output, expectedRecords);
 
     Job job = Job.getInstance(MR_CLUSTER.getConfig(), "test-mr-job");
     IcebergInputFormat.ConfigBuilder configBuilder = IcebergInputFormat.configure(job);
     configBuilder.readFrom(location);
-    Configuration conf = job.getConfiguration();
-    mrJob.setMapperClass(Map.class);
-    mrJob.setNumReduceTasks(0);
-
-    mrJob.submit();
-    Assert.assertTrue("MR job should succeed", mrJob.waitForCompletion(true));
-     */
+    //Configuration conf = job.getConfiguration();
+    job.setMapperClass(Map.class);
+    job.setNumReduceTasks(0);
+    job.submit();
+    Assert.assertTrue("MR job should succeed", job.waitForCompletion(true));
   }
 
   private DataFile writeFile(
