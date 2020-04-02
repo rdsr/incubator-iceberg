@@ -61,7 +61,6 @@ subprojects {
     testCompile.extendsFrom compileOnly
     all {
       exclude group: 'org.slf4j', module: 'slf4j-log4j12'
-      exclude group: 'org.mortbay.jetty'
     }
 
     testArtifacts
@@ -235,6 +234,11 @@ project(':iceberg-mr') {
     testCompile project(path: ':iceberg-data', configuration: 'testArtifacts')
     testCompile project(path: ':iceberg-api', configuration: 'testArtifacts')
     testCompile project(path: ':iceberg-core', configuration: 'testArtifacts')
+
+    testCompile "org.apache.hadoop:hadoop-mapreduce-client-jobclient::tests"
+    testCompile "org.apache.hadoop:hadoop-yarn-server-tests::tests"
+    testCompile "org.apache.hadoop:hadoop-common::tests"
+    testCompile "org.apache.hadoop:hadoop-hdfs::tests"
   }
 }
 
