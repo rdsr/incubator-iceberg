@@ -25,6 +25,9 @@ buildscript {
     gradlePluginPortal()
     maven { url "http://palantir.bintray.com/releases" }
     maven { url "https://plugins.gradle.org/m2/" }
+    maven {
+      url "https://clojars.org/repo"
+    }
   }
   dependencies {
     classpath 'com.github.jengelman.gradle.plugins:shadow:5.0.0'
@@ -49,6 +52,9 @@ allprojects {
   version = getProjectVersion()
   repositories {
     maven { url  "http://palantir.bintray.com/releases" }
+    maven {
+      url "https://clojars.org/repo"
+    }
     mavenCentral()
     mavenLocal()
   }
@@ -438,6 +444,43 @@ project(':iceberg-spark-runtime') {
     relocate 'com.carrotsearch', 'org.apache.iceberg.shaded.com.carrotsearch'
 
     archiveName = "iceberg-spark-runtime-${version}.${extension}"
+  }
+}
+
+project(':iceberg-clj') {
+  dependencies {
+    compile project(':iceberg-api')
+    compile project(':iceberg-common')
+    compile project(':iceberg-core')
+    compile project(':iceberg-data')
+    compile project(':iceberg-orc')
+    compile project(':iceberg-parquet')
+    compile project(':iceberg-arrow')
+    compile project(':iceberg-hive')
+
+    compileOnly "org.apache.avro:avro"
+    compile "org.apache.hadoop:hadoop-hdfs::tests"
+    compile "org.apache.hadoop:hadoop-common"
+    compile "org.apache.hadoop:hadoop-hdfs"
+    compile "org.apache.hadoop:hadoop-common::tests"
+    compile project(path: ':iceberg-hive', configuration: 'testArtifacts')
+    compile project(path: ':iceberg-data', configuration: 'testArtifacts')
+    compile project(path: ':iceberg-api', configuration: 'testArtifacts')
+
+    compile "cider:cider-nrepl:0.24.0"
+    compile "cider:orchard:0.5.6"
+    compile "org.clojure:clojure:1.10.1"
+        
+    compile "org.clojure:tools.trace:0.7.10"        
+    compile "org.clojure:data.json:0.2.6"
+  }
+    
+  sourceSets {
+    main {
+      java {
+        srcDirs = ['src/main/java', 'src/main/clojure']
+      }
+    }
   }
 }
 
