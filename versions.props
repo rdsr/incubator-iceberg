@@ -21,3 +21,4 @@ junit:junit = 4.12
 org.mockito:mockito-core = 1.10.19
 joda-time:joda-time = 2.9.9
 org.apache.hive:hive-exec = 2.3.7
+com.klarna:hiverunner = 5.2.1
