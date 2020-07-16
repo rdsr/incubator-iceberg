@@ -12,6 +12,9 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.hive.HiveCatalog;
+import org.apache.iceberg.hive.HiveCatalogs;
+import org.apache.iceberg.hive.TestHiveMetastore;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -46,10 +49,6 @@ public class TestFederatedIcebergMetaStoreClient {
   @Test
   public void testHiveMetadataReads() {
     // setup HiveRunner
-    shell.setHiveConfValue(
-        HiveConf.ConfVars.METASTOREURIS.varname,
-        metastore.hiveConf().getVar(HiveConf.ConfVars.METASTOREURIS));
-    shell.setHiveConfValue("metastore.client.impl", FederatedIcebergMetaStoreClient.class.getName());
     shell.start();
 
     Schema schema = new Schema(
@@ -62,22 +61,13 @@ public class TestFederatedIcebergMetaStoreClient {
                                       .identity("data")
                                       .identity("date")
                                       .build();
+    // write data..
+
     Table table = catalog.createTable(TableIdentifier.of("db", "t"), schema, spec);
-    // Verify table read
-    Assert.assertEquals(Lists.newArrayList("t"), Lists.newArrayList(shell.executeQuery("show tables in db")));
+    shell.executeQuery("create table with sto");
     for (String s : shell.executeQuery("describe formatted db.t")) {
       System.out.println(s);
     }
-
-    table.newAppend()
-         .appendFile(
-             DataFiles.builder(spec)
-                      .withPath("path/to/file.avro")
-                      .withPartitionPath("data=ds/date=2020-06-25")
-                      .withRecordCount(1L)
-                      .withFileSizeInBytes(1L)
-                      .build())
-         .commit();
-    Assert.assertEquals("data=ds/date=2020-06-25", shell.executeQuery("show partitions db.t").get(0));
+    shell.executeQuery("select * from db.t");
   }
 }
