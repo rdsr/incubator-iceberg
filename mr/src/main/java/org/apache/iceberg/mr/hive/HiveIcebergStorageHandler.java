@@ -34,6 +34,9 @@ import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
+import org.apache.iceberg.SchemaParser;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.mr.InputFormatConfig;
 
 public class HiveIcebergStorageHandler implements HiveStoragePredicateHandler, HiveStorageHandler {
 
@@ -66,7 +69,11 @@ public class HiveIcebergStorageHandler implements HiveStoragePredicateHandler, H
 
   @Override
   public void configureInputJobProperties(TableDesc tableDesc, Map<String, String> map) {
-
+    Table table = TableResolver.resolveTableFromConfiguration(conf, tableDesc.getProperties());
+    // we can set the right path depending upon the catalog we use
+    map.put(InputFormatConfig.TABLE_PATH, table.location());
+    map.put(InputFormatConfig.TABLE_LOCATION, table.location());
+    map.put(InputFormatConfig.TABLE_SCHEMA, SchemaParser.toJson(table.schema()));
   }
 
   @Override
@@ -91,6 +98,7 @@ public class HiveIcebergStorageHandler implements HiveStoragePredicateHandler, H
 
   @Override
   public void setConf(Configuration conf) {
+    // this conf should also have hive setting which we can utilize to configure custom catalog loader for example
     this.conf = conf;
   }
 

@@ -47,7 +47,7 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 @RunWith(StandaloneHiveRunner.class)
 public class TestHiveIcebergInputFormat {
 
-  @HiveSQL(files = {}, autoStart = true)
+  @HiveSQL(files = {}, autoStart = false)
   private HiveShell shell;
 
   @Rule
@@ -83,6 +83,8 @@ public class TestHiveIcebergInputFormat {
   @Before
   public void before() throws IOException {
     Configuration conf = new Configuration();
+    shell.setHiveConfValue("__AA__  ", "hello");
+    shell.start();
     tables = new HadoopTables(conf);
 
     File customerLocation = temp.newFolder("customers");
@@ -143,7 +145,6 @@ public class TestHiveIcebergInputFormat {
   public void testJoinTables() {
     createHiveTable("customers", customerTable.location());
     createHiveTable("orders", orderTable.location());
-
     List<Object[]> rows = shell.executeStatement(
             "SELECT c.customer_id, c.first_name, o.order_id, o.total " +
                     "FROM default.customers c JOIN default.orders o ON c.customer_id = o.customer_id " +
